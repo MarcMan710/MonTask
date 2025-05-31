@@ -14,8 +14,14 @@ RUN pnpm install
 # Copy source code
 COPY . .
 
+# Build the application
+RUN pnpm build
+
+# Install serve to run the built application
+RUN npm install -g serve
+
 # Expose port
-EXPOSE 5000
+EXPOSE 3000
 
 # Start the application
-CMD ["pnpm", "start"]
+CMD ["serve", "-s", "dist", "-l", "3000"] 

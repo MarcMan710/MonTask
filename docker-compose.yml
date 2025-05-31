@@ -1,10 +1,48 @@
+version: '3.8'
+
 services:
   backend:
-    image: backend
     build:
-      context: backend
-      dockerfile: ./Dockerfile
-    environment:
-      NODE_ENV: production
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
-      - 3000:3000
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/montask
+      - JWT_SECRET=your-secret-key-here
+      - JWT_EXPIRE=30d
+      - CORS_ORIGIN=http://localhost:3000
+    depends_on:
+      - mongodb
+    networks:
+      - montask-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
+    networks:
+      - montask-network
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - montask-network
+
+networks:
+  montask-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

@@ -1,4 +1,5 @@
 node_modules
+dist
 npm-debug.log
 Dockerfile
 .dockerignore
@@ -7,8 +8,7 @@ Dockerfile
 README.md
 .env
 .env.*
-dist
 coverage
 .vscode
 .idea
-*.log
+*.log 

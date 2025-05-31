@@ -1,32 +1,80 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { authService } from '../services/api';
 
-function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate();
+export const useAuth = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
+  const login = useCallback(async (email, password) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await authService.login({ email, password });
+      const { token, ...userData } = response.data;
+      localStorage.setItem('token', token);
+      setUser(userData);
+      return userData;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  const login = (token) => {
-    localStorage.setItem('token', token);
-    setIsAuthenticated(true);
-    navigate('/dashboard');
-  };
+  const register = useCallback(async (userData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await authService.register(userData);
+      const { token, ...user } = response.data;
+      localStorage.setItem('token', token);
+      setUser(user);
+      return user;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    navigate('/login');
+    setUser(null);
+  }, []);
+
+  const checkAuth = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setUser(null);
+        return;
+      }
+      const response = await authService.getMe();
+      setUser(response.data);
+    } catch (err) {
+      setUser(null);
+      localStorage.removeItem('token');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  return {
+    user,
+    loading,
+    error,
+    login,
+    register,
+    logout,
+    checkAuth,
+    isAuthenticated: !!user,
   };
-
-  return { isAuthenticated, login, logout };
-}
-
-export default useAuth;
+};
